@@ -31,6 +31,10 @@ from app.services.workflow_dependency_engine import (
     StepConcurrencyError
 )
 from app.models.workflow_models import StepStatus, TaskStatus
+from app.mcp.server import ArvaMCPServer
+from app.mcp.client import ArvaMCPClient
+from app.mcp.gemini_mcp_adapter import GeminiMCPOrchestrator
+from app.mcp.protocol import MCPToolCallRequest
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -44,11 +48,17 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 # Initialize Service Components
 try:
     tools = ReadOnlyTelemetryTools(BACKEND_BASE_URL, ARVACORE_API_TOKEN)
-    advisor = ArvaGeminiAdvisor(tools, GEMINI_API_KEY, GEMINI_MODEL)
+    mcp_server = ArvaMCPServer(telemetry_tools=tools)
+    mcp_client = ArvaMCPClient(server=mcp_server)
+    mcp_orchestrator = GeminiMCPOrchestrator(mcp_client=mcp_client)
+    advisor = ArvaGeminiAdvisor(tools, GEMINI_API_KEY, GEMINI_MODEL, mcp_orchestrator=mcp_orchestrator)
     aggregator = MultiSourceAgronomicEvidenceAggregator(BACKEND_BASE_URL, ARVACORE_API_TOKEN)
     event_engine = EventDrivenArvaEngine()
 except Exception as e:
     tools = None
+    mcp_server = ArvaMCPServer(telemetry_tools=None)
+    mcp_client = ArvaMCPClient(server=mcp_server)
+    mcp_orchestrator = GeminiMCPOrchestrator(mcp_client=mcp_client)
     advisor = None
     aggregator = None
     event_engine = EventDrivenArvaEngine()
@@ -166,6 +176,12 @@ def health():
         "status": "UP",
         "service": "arva-ai",
         "model": GEMINI_MODEL,
+        "mcp_server": {
+            "status": "ACTIVE",
+            "registered_tools_count": len(mcp_server.list_tools()) if mcp_server else 0,
+            "registered_resources_count": len(mcp_server.list_resources()) if mcp_server else 0,
+            "registered_prompts_count": len(mcp_server.list_prompts()) if mcp_server else 0
+        },
         "data_sources": {
             "pagasa_mcp": "CONFIGURED",
             "lopez_historical_agri_mcp": "CONFIGURED",
@@ -175,6 +191,52 @@ def health():
         },
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
+
+# =============================================================================
+# MODEL CONTEXT PROTOCOL (MCP) ENDPOINTS
+# =============================================================================
+
+@app.get("/api/v1/mcp/tools")
+def api_mcp_list_tools():
+    """Returns registered MCP tool schemas and parameter definitions."""
+    if not mcp_server:
+        raise HTTPException(status_code=503, detail="MCP Server not initialized")
+    tools_list = [t.model_dump() for t in mcp_server.list_tools()]
+    return {"tools": tools_list, "total": len(tools_list)}
+
+@app.post("/api/v1/mcp/call")
+def api_mcp_call_tool(request: MCPToolCallRequest):
+    """Executes an authorized MCP tool call with RBAC enforcement and execution tracking."""
+    if not mcp_server:
+        raise HTTPException(status_code=503, detail="MCP Server not initialized")
+    result = mcp_server.execute_tool(request)
+    return result.model_dump()
+
+@app.get("/api/v1/mcp/resources")
+def api_mcp_list_resources():
+    """Lists available contextual agronomic resources."""
+    if not mcp_server:
+        raise HTTPException(status_code=503, detail="MCP Server not initialized")
+    res_list = [r.model_dump() for r in mcp_server.list_resources()]
+    return {"resources": res_list, "total": len(res_list)}
+
+@app.get("/api/v1/mcp/resources/read")
+def api_mcp_read_resource(uri: str):
+    """Reads content for an MCP resource URI."""
+    if not mcp_server:
+        raise HTTPException(status_code=503, detail="MCP Server not initialized")
+    try:
+        return mcp_server.read_resource(uri)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@app.get("/api/v1/mcp/prompts")
+def api_mcp_list_prompts():
+    """Lists available agricultural prompt templates."""
+    if not mcp_server:
+        raise HTTPException(status_code=503, detail="MCP Server not initialized")
+    p_list = [p.model_dump() for p in mcp_server.list_prompts()]
+    return {"prompts": p_list, "total": len(p_list)}
 
 @app.post("/api/v1/ai/query")
 def api_query(payload: QueryPayload):

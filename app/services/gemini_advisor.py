@@ -13,6 +13,8 @@ from typing import Dict, Any, List
 
 from app.schemas.decision_models import UserQueryRequest, AIAdvisorResponse
 from app.tools.read_only_tools import ReadOnlyTelemetryTools
+from app.mcp.gemini_mcp_adapter import GeminiMCPOrchestrator
+from app.mcp.protocol import MCPToolExecutionState
 from app.services.philrice_rice_knowledge import (
     RICE_VARIETIES,
     CROP_ESTABLISHMENT_METHODS,
@@ -78,10 +80,17 @@ ADVERSARIAL_KEYWORDS = [
 ]
 
 class ArvaGeminiAdvisor:
-    def __init__(self, tools: ReadOnlyTelemetryTools, api_key: str = "", model_name: str = "gemini-2.5-flash"):
+    def __init__(
+        self,
+        tools: ReadOnlyTelemetryTools,
+        api_key: str = "",
+        model_name: str = "gemini-2.5-flash",
+        mcp_orchestrator: Optional[GeminiMCPOrchestrator] = None
+    ):
         self.tools = tools
         self.api_key = api_key or os.getenv("GEMINI_API_KEY", "")
         self.model_name = model_name
+        self.mcp_orchestrator = mcp_orchestrator
         self.phenology_engine = RicePhenologyAndPredictionEngine()
         self.quality_engine = TelemetryQualityEngine()
 
@@ -114,7 +123,43 @@ class ArvaGeminiAdvisor:
                 "disclaimer": "Advisory only. Zero direct actuation capabilities."
             }
 
-        # 2. Retrieve Ground-Truth Field Telemetry via Authorized Tools
+        # 2. Retrieve Ground-Truth Field Telemetry via Authorized Tools / MCP
+        tool_execution_records = []
+        if self.mcp_orchestrator:
+            selected_tools = self.mcp_orchestrator.select_appropriate_tools(sanitized_text, [])
+            for t_name in selected_tools:
+                args = {"field_id": request.field_id}
+                if t_name == "get_pagasa_weather":
+                    args["days"] = 3
+                elif t_name == "search_philrice_manual":
+                    args["query"] = sanitized_text
+                elif t_name == "get_agronomic_profile":
+                    args["category"] = "all"
+                elif t_name == "evaluate_planting_readiness":
+                    args["target_crop"] = "NSIC Rc 222"
+                    args["preparation_days_left"] = 21
+
+                import asyncio
+                try:
+                    res = asyncio.run(self.mcp_orchestrator.execute_tool_call(
+                        tool_name=t_name,
+                        arguments=args,
+                        user_id=request.user_id,
+                        role=request.role
+                    ))
+                    tool_execution_records.append({
+                        "tool_name": res.name,
+                        "status": res.state.value,
+                        "execution_time_ms": res.execution_time_ms,
+                        "requires_confirmation": res.requires_confirmation
+                    })
+                except Exception as ex:
+                    tool_execution_records.append({
+                        "tool_name": t_name,
+                        "status": "FAILED",
+                        "error": str(ex)
+                    })
+
         telemetry_result = self.tools.execute_tool("get_latest_field_telemetry", {"field_id": request.field_id})
         irrigation_history = self.tools.execute_tool("get_irrigation_event_history", {"field_id": request.field_id, "limit": 3})
 
@@ -242,6 +287,7 @@ class ArvaGeminiAdvisor:
                 "IRRI Alternate Wetting and Drying (AWD) Technical Guidelines (safe drying to -15 cm)",
                 "DA-PhilRice PalayCheck System: 9 Key Checks for Irrigated Lowland Rice"
             ],
+            "mcp_tool_executions": tool_execution_records,
             "disclaimer": "Advisory recommendation only. Physical pump actuation requires farmer authorization in ArvaLink."
         }
 
