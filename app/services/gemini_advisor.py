@@ -9,7 +9,7 @@ import re
 import json
 import uuid
 from datetime import datetime, timezone
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from app.schemas.decision_models import UserQueryRequest, AIAdvisorResponse
 from app.tools.read_only_tools import ReadOnlyTelemetryTools
