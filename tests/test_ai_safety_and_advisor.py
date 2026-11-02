@@ -6,7 +6,7 @@ from app.services.gemini_advisor import ArvaGeminiAdvisor
 class TestArvaAISafetyAndAdvisor(unittest.TestCase):
     def setUp(self):
         self.tools = ReadOnlyTelemetryTools("https://mock-backend/api/v1", "token123")
-        self.advisor = ArvaGeminiAdvisor(self.tools, "mock_gemini_key", "gemini-2.5-flash")
+        self.advisor = ArvaGeminiAdvisor(self.tools, "mock_gemini_key", "gemini-3.6-flash")
 
     def test_read_only_tools_have_no_actuators(self):
         """CRITICAL: Verify NO pump or valve tools exist in declarative tools."""

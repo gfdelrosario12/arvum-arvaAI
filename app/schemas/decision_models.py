@@ -59,7 +59,7 @@ class StructuredIrrigationDecision:
     is_simulated: bool = False
     expiration_timestamp: Optional[str] = None
     confidence_score: float = 0.95
-    model_version: str = "gemini-2.5-flash"
+    model_version: str = "gemini-3.6-flash"
 
 @dataclass
 class AIAdvisorResponse:

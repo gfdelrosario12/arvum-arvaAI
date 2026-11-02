@@ -43,7 +43,7 @@ from pydantic import BaseModel
 BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "https://api-aquaflow.gladwindr.me/api/v1")
 ARVACORE_API_TOKEN = os.getenv("ARVACORE_API_TOKEN", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 
 # Initialize Service Components
 try:

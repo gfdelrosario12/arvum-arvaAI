@@ -3,7 +3,7 @@
 ## 1. Executive Summary & Architecture Overview
 
 The Model Context Protocol (MCP) has been implemented and integrated across the entire ArvaCore ecosystem. Rather than an isolated proof-of-concept or external wrapper, MCP functions as the **secure, standardized context and capability fabric** connecting:
-- **Arva AI Microservice** (FastAPI, Python 3.12, Gemini 2.5 Flash Orchestration)
+- **Arva AI Microservice** (FastAPI, Python 3.12, Gemini 3.6 Flash Orchestration)
 - **ArvaNet Backend** (Spring Boot 3, Java 21, PostgreSQL / TimescaleDB, REST APIs)
 - **ArvaNet Frontend** (Flutter 3.x, Responsive Web/Mobile UI, Execution Badges)
 - **ArvaLink Hardware Gateway & Sensors** (ESP32/LoRa, Node Telemetry, Actuation Invariants)
@@ -18,7 +18,7 @@ sequenceDiagram
     participant UI as ArvaNet Frontend (Flutter)
     participant Spring as ArvaNet Backend (Spring Boot)
     participant ArvaAI as Arva AI Microservice (FastAPI)
-    participant Orchestrator as Gemini 2.5 Flash Orchestrator
+    participant Orchestrator as Gemini 3.6 Flash Orchestrator
     participant MCP as Arva MCP Server (Tools/Resources/Prompts)
     participant Services as Telemetry / PAGASA / Agronomy
 
@@ -82,7 +82,7 @@ The MCP server exposes standard URI-addressable resources via `arva://`:
 
 ---
 
-## 3. MCP Client & Gemini 2.5 Flash Orchestrator
+## 3. MCP Client & Gemini 3.6 Flash Orchestrator
 
 The client layer is implemented in `ArvaAI/app/mcp/client.py` and `ArvaAI/app/mcp/gemini_mcp_adapter.py`.
 
@@ -98,7 +98,7 @@ The client layer is implemented in `ArvaAI/app/mcp/client.py` and `ArvaAI/app/mc
   }
   ```
 
-### 3.2 Gemini 2.5 Flash Orchestration Loop
+### 3.2 Gemini 3.6 Flash Orchestration Loop
 1. **Schema Conversion**: Automatically converts `MCPToolDefinition` instances into Gemini `FunctionDeclaration` structures adhering to JSON Schema specifications.
 2. **Dynamic Context Injection**: Injects system instructions constraining tool selection based on user intent (telemetry vs manual vs weather).
 3. **Multi-Turn Autonomous Loop**:
@@ -193,3 +193,4 @@ cd /home/gladwin/Documents/pagaaral/arvacore
    ```bash
    curl -sS https://arva-ai.gladwindr.me/api/v1/mcp/tools
    ```
+

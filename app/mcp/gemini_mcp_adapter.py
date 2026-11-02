@@ -1,6 +1,6 @@
 """
 Gemini MCP Adapter.
-Converts discovered MCP Tool definitions into Google Gemini 2.5 Flash FunctionDeclarations,
+Converts discovered MCP Tool definitions into Google Gemini Flash FunctionDeclarations,
 and coordinates multi-turn reasoning and tool invocation loops.
 """
 
@@ -15,7 +15,7 @@ logger = logging.getLogger("arva.mcp.gemini_adapter")
 
 class GeminiMCPOrchestrator:
     """
-    Coordinates Google Gemini 2.5 Flash function calling with an MCP Client.
+    Coordinates Google Gemini Flash function calling with an MCP Client.
     Supports multi-round tool loops, recursion prevention, and detailed execution telemetry.
     """
 

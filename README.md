@@ -1,7 +1,7 @@
 # Arva AI: Decision-Support Agent Microservice
 
 **Framework:** Python 3.10+ (FastAPI / Pure Python ASGI Compatible)  
-**AI Model:** Google Gemini API (`gemini-2.5-flash` / `gemini-2.5-flash-lite`)  
+**AI Model:** Google Gemini API (`gemini-3.6-flash` / `gemini-3.8-flash`)  
 **SDK:** `google-genai`  
 **Architecture Model:** Backend-Mediated Advisory Agent  
 
@@ -21,7 +21,7 @@ Arva AI is an expert agricultural companion designed to assist rice farmers in m
 | Variable | Description | Default / Example |
 | :--- | :--- | :--- |
 | `GEMINI_API_KEY` | Google Gemini API Key | Stored in backend vault |
-| `GEMINI_MODEL` | Gemini Model Identifier | `gemini-2.5-flash` |
+| `GEMINI_MODEL` | Gemini Model Identifier | `gemini-3.6-flash` |
 | `BACKEND_BASE_URL` | ArvaNet Backend Base API | `https://api-aquaflow.gladwindr.me/api/v1` |
 | `ARVACORE_API_TOKEN`| Internal Service JWT Bearer Token | `secret_service_token` |
 | `MAX_TOOL_ROUNDS` | Maximum tool execution rounds | `4` |

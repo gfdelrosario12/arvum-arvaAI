@@ -9,7 +9,7 @@ from app.services.gemini_advisor import ArvaGeminiAdvisor
 class TestExpandedEdgeCasesAndUncertainty(unittest.TestCase):
     def setUp(self):
         self.mock_tools = MagicMock(spec=ReadOnlyTelemetryTools)
-        self.advisor = ArvaGeminiAdvisor(self.mock_tools, "test_api_key", "gemini-2.5-flash")
+        self.advisor = ArvaGeminiAdvisor(self.mock_tools, "test_api_key", "gemini-3.6-flash")
 
     def test_stale_data_handling_and_explicit_uncertainty(self):
         """When telemetry data is older than 60 minutes, mark as stale with explicit uncertainty."""

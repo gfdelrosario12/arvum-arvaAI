@@ -84,7 +84,7 @@ class ArvaGeminiAdvisor:
         self,
         tools: ReadOnlyTelemetryTools,
         api_key: str = "",
-        model_name: str = "gemini-2.5-flash",
+        model_name: str = "gemini-3.6-flash",
         mcp_orchestrator: Optional[GeminiMCPOrchestrator] = None
     ):
         self.tools = tools
