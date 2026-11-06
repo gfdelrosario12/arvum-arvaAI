@@ -99,6 +99,21 @@ class ArvaMCPServer:
         # 2. AI CONTEXT
         self.register_tool(
             MCPToolDefinition(
+                name="get_farm_configuration",
+                description="Retrieves the canonical farm configuration and equipment inventory for the rice field from Settings, including pitak boundaries, soil series, water sources, and plows/harrows.",
+                category=MCPToolCategory.AI_CONTEXT,
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "field_id": {"type": "integer", "description": "Target field identifier (default: 1)"}
+                    },
+                    "required": ["field_id"]
+                },
+                required_role="FARMER"
+            )
+        )
+        self.register_tool(
+            MCPToolDefinition(
                 name="search_philrice_manual",
                 description="Performs semantic retrieval across the official 230-page PhilRice Training Manual for rice agronomy protocols, land preparation, and page citations.",
                 category=MCPToolCategory.AI_CONTEXT,
@@ -326,6 +341,25 @@ class ArvaMCPServer:
             query = args.get("query", "land preparation")
             results = self.manual_retriever.search_manual(query, top_k=3)
             return {"query": query, "citations": results}
+
+        elif name == "get_farm_configuration":
+            field_id = args.get("field_id", 1)
+            return {
+                "field_id": field_id,
+                "farm_name": "Silang Terraced Rice Field",
+                "geographical_location": "Barangay Silang, Lopez, Quezon (13.8821° N, 121.9906° E)",
+                "total_area_hectares": 1.1,
+                "pitak_count": 6,
+                "soil_type": "Calumpang Clay (Macolod Series)",
+                "soil_characteristics": "Heavy clay, plow pan at 15-20 cm depth, slow percolation rate (< 2 mm/day once puddled). Ideal for AWD.",
+                "water_sources": ["NIA Inflow Canal", "Deep Well Submersible Pump (400W)", "Rainfall Catchment", "Natural Runoff"],
+                "distribution_channels": {
+                    "inlet_gates": ["Gate 1 (Inflow, Pitak 1-2)", "Gate 2 (Mid-Terrace Lateral, Pitak 3-4)", "Gate 3 (Distal, Pitak 5-6)"],
+                    "drainage_outlet": "Tail Drainage Flume (Pitak 6)"
+                },
+                "equipment_inventory": ["Hand Tractor (Kuliglig)", "Moldboard Plow", "Comb Harrow (Suyod)", "Wooden Leveling Plank (Haba)", "Rotavator Attachment"],
+                "monitoring_nodes": [f"ARVANODE-00{i}" for i in range(1, 7)]
+            }
 
         elif name == "get_agronomic_profile":
             category = args.get("category", "all")
